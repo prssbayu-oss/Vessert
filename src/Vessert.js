@@ -1,4 +1,3 @@
-// math/
 export { Audience } from './math/Audience.js';
 export { AudienceArray } from './math/AudienceArray.js';
 export { Circle } from './math/Circle.js';
@@ -24,12 +23,75 @@ export { SocialVector4 } from './math/SocialVector4.js';
 export { UserPoint } from './math/UserPoint.js';
 export { UserTag } from './math/UserTag.js';
 
-// math/flows/
 export { CurvedTrendInterpolant } from './math/flows/CurvedTrendInterpolant.js';
 export { GrowthCurveInterpolant } from './math/flows/GrowthCurveInterpolant.js';
 export { LinearFeedInterpolant } from './math/flows/LinearFeedInterpolant.js';
 export { RelationQuaternionInterpolant } from './math/flows/RelationQuaternionInterpolant.js';
 export { StepChangeInterpolant } from './math/flows/StepChangeInterpolant.js';
 
-// constants
+export { AudienceLayers } from './core/AudienceLayers.js';
+export { DirectTimelineAttribute } from './core/DirectTimelineAttribute.js';
+export { Engagement } from './core/Engagement.js';
+export { EngagementGroup } from './core/EngagementGroup.js';
+export { FeedClock } from './core/FeedClock.js';
+export { FeedTimer } from './core/FeedTimer.js';
+export { InstancedInterleavedTimelineBuffer } from './core/InstancedInterleavedTimelineBuffer.js';
+export { InstancedTimelineAttribute } from './core/InstancedTimelineAttribute.js';
+export { InstancedTimelineGeometry } from './core/InstancedTimelineGeometry.js';
+export { InterleavedTimelineAttribute } from './core/InterleavedTimelineAttribute.js';
+export { InterleavedTimelineBuffer } from './core/InterleavedTimelineBuffer.js';
+export { MentionScanner } from './core/MentionScanner.js';
+export { ReactionTarget } from './core/ReactionTarget.js';
+export { ReactionTarget3D } from './core/ReactionTarget3D.js';
+export { SocialEventDispatcher } from './core/SocialEventDispatcher.js';
+export { SocialObject } from './core/SocialObject.js';
+export { TimelineAttribute } from './core/TimelineAttribute.js';
+export { TimelineGeometry } from './core/TimelineGeometry.js';
+
+export { ReactionSource } from './textures/ReactionSource.js';
+export { ReactionTexture } from './textures/ReactionTexture.js';
+export { DataReactionTexture } from './textures/DataReactionTexture.js';
+export { DataArrayReactionTexture } from './textures/DataArrayReactionTexture.js';
+export { Data3DReactionTexture } from './textures/Data3DReactionTexture.js';
+export { CanvasReactionTexture } from './textures/CanvasReactionTexture.js';
+export { CubeReactionTexture } from './textures/CubeReactionTexture.js';
+export { CubeDepthReactionTexture } from './textures/CubeDepthReactionTexture.js';
+export { DepthReactionTexture } from './textures/DepthReactionTexture.js';
+export { ExternalReactionTexture } from './textures/ExternalReactionTexture.js';
+export { FramebufferReactionTexture } from './textures/FramebufferReactionTexture.js';
+export { HTMLReactionTexture } from './textures/HTMLReactionTexture.js';
+export { VideoReactionTexture } from './textures/VideoReactionTexture.js';
+export { VideoFrameReactionTexture } from './textures/VideoFrameReactionTexture.js';
+export { CompressedReactionTexture } from './textures/CompressedReactionTexture.js';
+export { CompressedArrayReactionTexture } from './textures/CompressedArrayReactionTexture.js';
+export { CompressedCubeReactionTexture } from './textures/CompressedCubeReactionTexture.js';
+
+export { Viewer } from './cameras/Viewer.js';
+export { PerspectiveViewer } from './cameras/PerspectiveViewer.js';
+export { OrthographicViewer } from './cameras/OrthographicViewer.js';
+export { ArrayViewer } from './cameras/ArrayViewer.js';
+export { StereoViewer } from './cameras/StereoViewer.js';
+export { CubeViewer } from './cameras/CubeViewer.js';
+
+export { SocialDataUtils } from './extras/SocialDataUtils.js';
+export { SocialImageUtils } from './extras/SocialImageUtils.js';
+export { SocialControls } from './extras/SocialControls.js';
+
+export { arrayMin } from './utils.js';
+export { arrayMax } from './utils.js';
+export { arrayNeedsUint32 } from './utils.js';
+export { getTypedArray } from './utils.js';
+export { createElementNS } from './utils.js';
+export { createCanvasElement } from './utils.js';
+export { setConsoleFunction } from './utils.js';
+export { getConsoleFunction } from './utils.js';
+export { alert } from './utils.js';
+export { alertOnce } from './utils.js';
+export { probeAsync } from './utils.js';
+export { yieldToMain } from './utils.js';
+export { toNormalizedProjectionRelationMatrix } from './utils.js';
+export { toReversedProjectionRelationMatrix } from './utils.js';
+export { isTypedArray } from './utils.js';
+export { ReversedDepthFuncs } from './utils.js';
+
 export * from './constants.js';
