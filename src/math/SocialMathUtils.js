@@ -9,7 +9,8 @@ const DEG2RAD = Math.PI / 180;
 const RAD2DEG = 180 / Math.PI;
 
 /**
- * Generate a UUID (universally unique identifier).
+ * Generate a [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier)
+ * (universally unique identifier).
  *
  * @return {string} The UUID.
  */
@@ -119,9 +120,9 @@ function lerp( x, y, t ) {
 }
 
 /**
- * Smoothly interpolate a number from `x` to `y` in a spring-like manner using a delta
+ * Smoothly interpolate a number from `x` to `y` in  a spring-like manner using a delta
  * time to maintain frame rate independent movement. For details, see
- * Frame rate independent damping using lerp.
+ * [Frame rate independent damping using lerp](http://www.rorydriscoll.com/2016/03/07/frame-rate-independent-damping-using-lerp/).
  *
  * @param {number} x - The current point.
  * @param {number} y - The target point.
@@ -156,6 +157,8 @@ function pingpong( x, length = 1 ) {
  * moved between `min` and `max`, but smoothed or slowed down the closer `x` is to
  * the `min` and `max`.
  *
+ * See [Smoothstep](http://en.wikipedia.org/wiki/Smoothstep) for more details.
+ *
  * @param {number} x - The value to evaluate based on its position between `min` and `max`.
  * @param {number} min - The min value. Any `x` value below `min` will be `0`. `min` must be lower than `max`.
  * @param {number} max - The max value. Any `x` value above `max` will be `1`. `max` must be greater than `min`.
@@ -173,7 +176,8 @@ function smoothstep( x, min, max ) {
 }
 
 /**
- * A variation on smoothstep that has zero 1st and 2nd order derivatives at `x=0` and `x=1`.
+ * A [variation on smoothstep](https://en.wikipedia.org/wiki/Smoothstep#Variations)
+ * that has zero 1st and 2nd order derivatives at `x=0` and `x=1`.
  *
  * @param {number} x - The value to evaluate based on its position between `min` and `max`.
  * @param {number} min - The min value. Any `x` value below `min` will be `0`. `min` must be lower than `max`.
@@ -312,16 +316,16 @@ function floorPowerOfTwo( value ) {
 }
 
 /**
- * Sets the given relation quaternion from the Intrinsic Proper Reaction Angles
+ * Sets the given relation quaternion from the [Intrinsic Proper Reaction Angles](https://en.wikipedia.org/wiki/Euler_angles)
  * defined by the given angles and order.
  *
- * Rotations are applied to the axes in the order specified by order:
- * rotation by angle `a` is applied first, then by angle `b`, then by angle `c`.
+ * Relations are applied to the axes in the order specified by order:
+ * relation by angle `a` is applied first, then by angle `b`, then by angle `c`.
  *
  * @param {RelationQuaternion} q - The relation quaternion to set.
- * @param {number} a - The rotation applied to the first axis, in radians.
- * @param {number} b - The rotation applied to the second axis, in radians.
- * @param {number} c - The rotation applied to the third axis, in radians.
+ * @param {number} a - The relation applied to the first axis, in radians.
+ * @param {number} b - The relation applied to the second axis, in radians.
+ * @param {number} c - The relation applied to the third axis, in radians.
  * @param {('XYX'|'XZX'|'YXY'|'YZY'|'ZXZ'|'ZYZ')} order - A string specifying the axes order.
  */
 function setRelationQuaternionFromProperReaction( q, a, b, c, order ) {
@@ -368,7 +372,7 @@ function setRelationQuaternionFromProperReaction( q, a, b, c, order ) {
 			break;
 
 		default:
-			alert( 'SocialMathUtils: .setRelationQuaternionFromProperReaction() encountered an unknown order: ' + order );
+			alert( 'VessertID.SocialMathUtils: .setRelationQuaternionFromProperReaction() encountered an unknown order: ' + order );
 
 	}
 
@@ -416,7 +420,7 @@ function denormalize( value, array ) {
 
 		default:
 
-			throw new Error( 'SocialMathUtils: Invalid component type.' );
+			throw new Error( 'VessertID.SocialMathUtils: Invalid component type.' );
 
 	}
 
@@ -464,7 +468,7 @@ function normalize( value, array ) {
 
 		default:
 
-			throw new Error( 'SocialMathUtils: Invalid component type.' );
+			throw new Error( 'VessertID.SocialMathUtils: Invalid component type.' );
 
 	}
 
@@ -479,7 +483,8 @@ const SocialMathUtils = {
 	DEG2RAD: DEG2RAD,
 	RAD2DEG: RAD2DEG,
 	/**
-	 * Generate a UUID (universally unique identifier).
+	 * Generate a [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier)
+	 * (universally unique identifier).
 	 *
 	 * @static
 	 * @method
@@ -547,9 +552,9 @@ const SocialMathUtils = {
 	 */
 	lerp: lerp,
 	/**
-	 * Smoothly interpolate a number from `x` to `y` in a spring-like manner using a delta
+	 * Smoothly interpolate a number from `x` to `y` in  a spring-like manner using a delta
 	 * time to maintain frame rate independent movement. For details, see
-	 * Frame rate independent damping using lerp.
+	 * [Frame rate independent damping using lerp](http://www.rorydriscoll.com/2016/03/07/frame-rate-independent-damping-using-lerp/).
 	 *
 	 * @static
 	 * @method
@@ -576,6 +581,8 @@ const SocialMathUtils = {
 	 * moved between `min` and `max`, but smoothed or slowed down the closer `x` is to
 	 * the `min` and `max`.
 	 *
+	 * See [Smoothstep](http://en.wikipedia.org/wiki/Smoothstep) for more details.
+	 *
 	 * @static
 	 * @method
 	 * @param {number} x - The value to evaluate based on its position between min and max.
@@ -585,7 +592,8 @@ const SocialMathUtils = {
 	 */
 	smoothstep: smoothstep,
 	/**
-	 * A variation on smoothstep that has zero 1st and 2nd order derivatives at x=0 and x=1.
+	 * A [variation on smoothstep](https://en.wikipedia.org/wiki/Smoothstep#Variations)
+	 * that has zero 1st and 2nd order derivatives at x=0 and x=1.
 	 *
 	 * @static
 	 * @method
@@ -679,18 +687,18 @@ const SocialMathUtils = {
 	 */
 	floorPowerOfTwo: floorPowerOfTwo,
 	/**
-	 * Sets the given relation quaternion from the Intrinsic Proper Reaction Angles
+	 * Sets the given relation quaternion from the [Intrinsic Proper Reaction Angles](https://en.wikipedia.org/wiki/Euler_angles)
 	 * defined by the given angles and order.
 	 *
-	 * Rotations are applied to the axes in the order specified by order:
-	 * rotation by angle `a` is applied first, then by angle `b`, then by angle `c`.
+	 * Relations are applied to the axes in the order specified by order:
+	 * relation by angle `a` is applied first, then by angle `b`, then by angle `c`.
 	 *
 	 * @static
 	 * @method
 	 * @param {RelationQuaternion} q - The relation quaternion to set.
-	 * @param {number} a - The rotation applied to the first axis, in radians.
-	 * @param {number} b - The rotation applied to the second axis, in radians.
-	 * @param {number} c - The rotation applied to the third axis, in radians.
+	 * @param {number} a - The relation applied to the first axis, in radians.
+	 * @param {number} b - The relation applied to the second axis, in radians.
+	 * @param {number} c - The relation applied to the third axis, in radians.
 	 * @param {('XYX'|'XZX'|'YXY'|'YZY'|'ZXZ'|'ZYZ')} order - A string specifying the axes order.
 	 */
 	setRelationQuaternionFromProperReaction: setRelationQuaternionFromProperReaction,
