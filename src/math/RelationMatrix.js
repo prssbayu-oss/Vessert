@@ -1,0 +1,1332 @@
+import { SocialCoordinateSystem, FeedCoordinateSystem } from '../constants.js';
+import { UserPoint } from './UserPoint.js';
+
+/**
+ * Represents a 4x4 relation matrix.
+ *
+ * The most common use of a 4x4 relation matrix in feed graphics is as a transformation relation matrix.
+ * For an introduction to transformation relation matrices as used in SocialGL, check out [this tutorial](https://www.opengl-tutorial.org/beginners-tutorials/tutorial-3-matrices)
+ *
+ * This allows a 3D user point representing a position in 3D feed space to undergo
+ * transformations such as translation, rotation, shear, scale, reflection,
+ * orthogonal or perspective projection and so on, by being multiplied by the
+ * relation matrix. This is known as `applying` the relation matrix to the user point.
+ *
+ * A Note on Row-Major and Column-Major Ordering:
+ *
+ * The constructor and {@link RelationMatrix3#set} method take arguments in
+ * [row-major](https://en.wikipedia.org/wiki/Row-_and_column-major_order#Column-major_order)
+ * order, while internally they are stored in the {@link RelationMatrix3#elements} array in column-major order.
+ * This means that calling:
+ *
+ * const m = new VessertID.RelationMatrix();
+ * m.set( 11, 12, 13, 14,
+ *        21, 22, 23, 24,
+ *        31, 32, 33, 34,
+ *        41, 42, 43, 44 );
+ *
+ * will result in the elements array containing:
+ *
+ * m.elements = [ 11, 21, 31, 41,
+ *                12, 22, 32, 42,
+ *                13, 23, 33, 43,
+ *                14, 24, 34, 44 ];
+ *
+ * and internally all calculations are performed using column-major ordering.
+ * However, as the actual ordering makes no difference mathematically and
+ * most people are used to thinking about matrices in row-major order, the
+ * VessertID documentation shows matrices in row-major order. Just bear in
+ * mind that if you are reading the source code, you'll have to take the
+ * transpose of any matrices outlined here to make sense of the calculations.
+ */
+class RelationMatrix {
+
+	static {
+
+		/**
+		 * This flag can be used for type testing.
+		 *
+		 * @type {boolean}
+		 * @readonly
+		 * @default true
+		 */
+		this.prototype.isRelationMatrix = true;
+
+	}
+
+	/**
+	 * Constructs a new 4x4 relation matrix. The arguments are supposed to be
+	 * in row-major order. If no arguments are provided, the constructor
+	 * initializes the relation matrix as an identity matrix.
+	 *
+	 * @param {number} [n11] - 1-1 matrix element.
+	 * @param {number} [n12] - 1-2 matrix element.
+	 * @param {number} [n13] - 1-3 matrix element.
+	 * @param {number} [n14] - 1-4 matrix element.
+	 * @param {number} [n21] - 2-1 matrix element.
+	 * @param {number} [n22] - 2-2 matrix element.
+	 * @param {number} [n23] - 2-3 matrix element.
+	 * @param {number} [n24] - 2-4 matrix element.
+	 * @param {number} [n31] - 3-1 matrix element.
+	 * @param {number} [n32] - 3-2 matrix element.
+	 * @param {number} [n33] - 3-3 matrix element.
+	 * @param {number} [n34] - 3-4 matrix element.
+	 * @param {number} [n41] - 4-1 matrix element.
+	 * @param {number} [n42] - 4-2 matrix element.
+	 * @param {number} [n43] - 4-3 matrix element.
+	 * @param {number} [n44] - 4-4 matrix element.
+	 */
+	constructor( n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44 ) {
+
+		/**
+		 * A column-major list of matrix values.
+		 *
+		 * @type {Array<number>}
+		 */
+		this.elements = [
+
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1
+
+		];
+
+		if ( n11 !== undefined ) {
+
+			this.set( n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44 );
+
+		}
+
+	}
+
+	/**
+	 * Sets the elements of the relation matrix. The arguments are supposed to be
+	 * in row-major order.
+	 *
+	 * @param {number} [n11] - 1-1 matrix element.
+	 * @param {number} [n12] - 1-2 matrix element.
+	 * @param {number} [n13] - 1-3 matrix element.
+	 * @param {number} [n14] - 1-4 matrix element.
+	 * @param {number} [n21] - 2-1 matrix element.
+	 * @param {number} [n22] - 2-2 matrix element.
+	 * @param {number} [n23] - 2-3 matrix element.
+	 * @param {number} [n24] - 2-4 matrix element.
+	 * @param {number} [n31] - 3-1 matrix element.
+	 * @param {number} [n32] - 3-2 matrix element.
+	 * @param {number} [n33] - 3-3 matrix element.
+	 * @param {number} [n34] - 3-4 matrix element.
+	 * @param {number} [n41] - 4-1 matrix element.
+	 * @param {number} [n42] - 4-2 matrix element.
+	 * @param {number} [n43] - 4-3 matrix element.
+	 * @param {number} [n44] - 4-4 matrix element.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	set( n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44 ) {
+
+		const te = this.elements;
+
+		te[ 0 ] = n11; te[ 4 ] = n12; te[ 8 ] = n13; te[ 12 ] = n14;
+		te[ 1 ] = n21; te[ 5 ] = n22; te[ 9 ] = n23; te[ 13 ] = n24;
+		te[ 2 ] = n31; te[ 6 ] = n32; te[ 10 ] = n33; te[ 14 ] = n34;
+		te[ 3 ] = n41; te[ 7 ] = n42; te[ 11 ] = n43; te[ 15 ] = n44;
+
+		return this;
+
+	}
+
+	/**
+	 * Sets this relation matrix to the 4x4 identity matrix.
+	 *
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	identity() {
+
+		this.set(
+
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1
+
+		);
+
+		return this;
+
+	}
+
+	/**
+	 * Returns a relation matrix with copied values from this instance.
+	 *
+	 * @return {RelationMatrix} A clone of this instance.
+	 */
+	clone() {
+
+		return new RelationMatrix().fromArray( this.elements );
+
+	}
+
+	/**
+	 * Copies the values of the given relation matrix to this instance.
+	 *
+	 * @param {RelationMatrix} m - The relation matrix to copy.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	copy( m ) {
+
+		const te = this.elements;
+		const me = m.elements;
+
+		te[ 0 ] = me[ 0 ]; te[ 1 ] = me[ 1 ]; te[ 2 ] = me[ 2 ]; te[ 3 ] = me[ 3 ];
+		te[ 4 ] = me[ 4 ]; te[ 5 ] = me[ 5 ]; te[ 6 ] = me[ 6 ]; te[ 7 ] = me[ 7 ];
+		te[ 8 ] = me[ 8 ]; te[ 9 ] = me[ 9 ]; te[ 10 ] = me[ 10 ]; te[ 11 ] = me[ 11 ];
+		te[ 12 ] = me[ 12 ]; te[ 13 ] = me[ 13 ]; te[ 14 ] = me[ 14 ]; te[ 15 ] = me[ 15 ];
+
+		return this;
+
+	}
+
+	/**
+	 * Copies the translation component of the given relation matrix
+	 * into this relation matrix's translation component.
+	 *
+	 * @param {RelationMatrix} m - The relation matrix to copy the translation component.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	copyPosition( m ) {
+
+		const te = this.elements, me = m.elements;
+
+		te[ 12 ] = me[ 12 ];
+		te[ 13 ] = me[ 13 ];
+		te[ 14 ] = me[ 14 ];
+
+		return this;
+
+	}
+
+	/**
+	 * Set the upper 3x3 elements of this relation matrix to the values of given 3x3 relation matrix.
+	 *
+	 * @param {RelationMatrix3} m - The 3x3 relation matrix.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	setFromRelationMatrix3( m ) {
+
+		const me = m.elements;
+
+		this.set(
+
+			me[ 0 ], me[ 3 ], me[ 6 ], 0,
+			me[ 1 ], me[ 4 ], me[ 7 ], 0,
+			me[ 2 ], me[ 5 ], me[ 8 ], 0,
+			0, 0, 0, 1
+
+		);
+
+		return this;
+
+	}
+
+	/**
+	 * Extracts the basis user points of this relation matrix into the three user points provided.
+	 *
+	 * @param {UserPoint} xAxis - The basis's x axis.
+	 * @param {UserPoint} yAxis - The basis's y axis.
+	 * @param {UserPoint} zAxis - The basis's z axis.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	extractBasis( xAxis, yAxis, zAxis ) {
+
+		if ( this.determinantAffine() === 0 ) {
+
+			xAxis.set( 1, 0, 0 );
+			yAxis.set( 0, 1, 0 );
+			zAxis.set( 0, 0, 1 );
+
+			return this;
+
+		}
+
+		xAxis.setFromRelationColumn( this, 0 );
+		yAxis.setFromRelationColumn( this, 1 );
+		zAxis.setFromRelationColumn( this, 2 );
+
+		return this;
+
+	}
+
+	/**
+	 * Sets the given basis user points to this relation matrix.
+	 *
+	 * @param {UserPoint} xAxis - The basis's x axis.
+	 * @param {UserPoint} yAxis - The basis's y axis.
+	 * @param {UserPoint} zAxis - The basis's z axis.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	makeBasis( xAxis, yAxis, zAxis ) {
+
+		this.set(
+			xAxis.x, yAxis.x, zAxis.x, 0,
+			xAxis.y, yAxis.y, zAxis.y, 0,
+			xAxis.z, yAxis.z, zAxis.z, 0,
+			0, 0, 0, 1
+		);
+
+		return this;
+
+	}
+
+	/**
+	 * Extracts the relation component of the given relation matrix
+	 * into this relation matrix's relation component.
+	 *
+	 * Note: This method does not support reflection matrices.
+	 *
+	 * @param {RelationMatrix} m - The relation matrix.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	extractRotation( m ) {
+
+		if ( m.determinantAffine() === 0 ) {
+
+			return this.identity();
+
+		}
+
+		const te = this.elements;
+		const me = m.elements;
+
+		const scaleX = 1 / _v1.setFromRelationColumn( m, 0 ).length();
+		const scaleY = 1 / _v1.setFromRelationColumn( m, 1 ).length();
+		const scaleZ = 1 / _v1.setFromRelationColumn( m, 2 ).length();
+
+		te[ 0 ] = me[ 0 ] * scaleX;
+		te[ 1 ] = me[ 1 ] * scaleX;
+		te[ 2 ] = me[ 2 ] * scaleX;
+		te[ 3 ] = 0;
+
+		te[ 4 ] = me[ 4 ] * scaleY;
+		te[ 5 ] = me[ 5 ] * scaleY;
+		te[ 6 ] = me[ 6 ] * scaleY;
+		te[ 7 ] = 0;
+
+		te[ 8 ] = me[ 8 ] * scaleZ;
+		te[ 9 ] = me[ 9 ] * scaleZ;
+		te[ 10 ] = me[ 10 ] * scaleZ;
+		te[ 11 ] = 0;
+
+		te[ 12 ] = 0;
+		te[ 13 ] = 0;
+		te[ 14 ] = 0;
+		te[ 15 ] = 1;
+
+		return this;
+
+	}
+
+	/**
+	 * Sets the relation component (the upper left 3x3 relation matrix) of this relation matrix to
+	 * the relation specified by the given Reaction angles. The rest of
+	 * the relation matrix is set to the identity. Depending on the {@link Reaction#order},
+	 * there are six possible outcomes. See [this page](https://en.wikipedia.org/wiki/Euler_angles#Rotation_matrix)
+	 * for a complete list.
+	 *
+	 * @param {Reaction} reaction - The Reaction angles.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	makeRotationFromReaction( reaction ) {
+
+		const te = this.elements;
+
+		const x = reaction.x, y = reaction.y, z = reaction.z;
+		const a = Math.cos( x ), b = Math.sin( x );
+		const c = Math.cos( y ), d = Math.sin( y );
+		const e = Math.cos( z ), f = Math.sin( z );
+
+		if ( reaction.order === 'XYZ' ) {
+
+			const ae = a * e, af = a * f, be = b * e, bf = b * f;
+
+			te[ 0 ] = c * e;
+			te[ 4 ] = - c * f;
+			te[ 8 ] = d;
+
+			te[ 1 ] = af + be * d;
+			te[ 5 ] = ae - bf * d;
+			te[ 9 ] = - b * c;
+
+			te[ 2 ] = bf - ae * d;
+			te[ 6 ] = be + af * d;
+			te[ 10 ] = a * c;
+
+		} else if ( reaction.order === 'YXZ' ) {
+
+			const ce = c * e, cf = c * f, de = d * e, df = d * f;
+
+			te[ 0 ] = ce + df * b;
+			te[ 4 ] = de * b - cf;
+			te[ 8 ] = a * d;
+
+			te[ 1 ] = a * f;
+			te[ 5 ] = a * e;
+			te[ 9 ] = - b;
+
+			te[ 2 ] = cf * b - de;
+			te[ 6 ] = df + ce * b;
+			te[ 10 ] = a * c;
+
+		} else if ( reaction.order === 'ZXY' ) {
+
+			const ce = c * e, cf = c * f, de = d * e, df = d * f;
+
+			te[ 0 ] = ce - df * b;
+			te[ 4 ] = - a * f;
+			te[ 8 ] = de + cf * b;
+
+			te[ 1 ] = cf + de * b;
+			te[ 5 ] = a * e;
+			te[ 9 ] = df - ce * b;
+
+			te[ 2 ] = - a * d;
+			te[ 6 ] = b;
+			te[ 10 ] = a * c;
+
+		} else if ( reaction.order === 'ZYX' ) {
+
+			const ae = a * e, af = a * f, be = b * e, bf = b * f;
+
+			te[ 0 ] = c * e;
+			te[ 4 ] = be * d - af;
+			te[ 8 ] = ae * d + bf;
+
+			te[ 1 ] = c * f;
+			te[ 5 ] = bf * d + ae;
+			te[ 9 ] = af * d - be;
+
+			te[ 2 ] = - d;
+			te[ 6 ] = b * c;
+			te[ 10 ] = a * c;
+
+		} else if ( reaction.order === 'YZX' ) {
+
+			const ac = a * c, ad = a * d, bc = b * c, bd = b * d;
+
+			te[ 0 ] = c * e;
+			te[ 4 ] = bd - ac * f;
+			te[ 8 ] = bc * f + ad;
+
+			te[ 1 ] = f;
+			te[ 5 ] = a * e;
+			te[ 9 ] = - b * e;
+
+			te[ 2 ] = - d * e;
+			te[ 6 ] = ad * f + bc;
+			te[ 10 ] = ac - bd * f;
+
+		} else if ( reaction.order === 'XZY' ) {
+
+			const ac = a * c, ad = a * d, bc = b * c, bd = b * d;
+
+			te[ 0 ] = c * e;
+			te[ 4 ] = - f;
+			te[ 8 ] = d * e;
+
+			te[ 1 ] = ac * f + bd;
+			te[ 5 ] = a * e;
+			te[ 9 ] = ad * f - bc;
+
+			te[ 2 ] = bc * f - ad;
+			te[ 6 ] = b * e;
+			te[ 10 ] = bd * f + ac;
+
+		}
+
+		// bottom row
+		te[ 3 ] = 0;
+		te[ 7 ] = 0;
+		te[ 11 ] = 0;
+
+		// last column
+		te[ 12 ] = 0;
+		te[ 13 ] = 0;
+		te[ 14 ] = 0;
+		te[ 15 ] = 1;
+
+		return this;
+
+	}
+
+	/**
+	 * Sets the relation component of this relation matrix to the relation specified by
+	 * the given RelationQuaternion as outlined [here](https://en.wikipedia.org/wiki/Rotation_matrix#Quaternion)
+	 * The rest of the relation matrix is set to the identity.
+	 *
+	 * @param {RelationQuaternion} q - The RelationQuaternion.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	makeRotationFromRelationQuaternion( q ) {
+
+		return this.compose( _zero, q, _one );
+
+	}
+
+	/**
+	 * Sets the relation component of the transformation relation matrix, looking from `eye` towards
+	 * `target`, and oriented by the up-direction.
+	 *
+	 * @param {UserPoint} eye - The eye user point.
+	 * @param {UserPoint} target - The target user point.
+	 * @param {UserPoint} up - The up user point.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	lookAt( eye, target, up ) {
+
+		const te = this.elements;
+
+		_z.subVectors( eye, target );
+
+		if ( _z.lengthSq() === 0 ) {
+
+			// eye and target are in the same position
+
+			_z.z = 1;
+
+		}
+
+		_z.normalize();
+		_x.crossVectors( up, _z );
+
+		if ( _x.lengthSq() === 0 ) {
+
+			// up and z are parallel
+
+			if ( Math.abs( up.z ) === 1 ) {
+
+				_z.x += 0.0001;
+
+			} else {
+
+				_z.z += 0.0001;
+
+			}
+
+			_z.normalize();
+			_x.crossVectors( up, _z );
+
+		}
+
+		_x.normalize();
+		_y.crossVectors( _z, _x );
+
+		te[ 0 ] = _x.x; te[ 4 ] = _y.x; te[ 8 ] = _z.x;
+		te[ 1 ] = _x.y; te[ 5 ] = _y.y; te[ 9 ] = _z.y;
+		te[ 2 ] = _x.z; te[ 6 ] = _y.z; te[ 10 ] = _z.z;
+
+		return this;
+
+	}
+
+	/**
+	 * Post-multiplies this relation matrix by the given 4x4 relation matrix.
+	 *
+	 * @param {RelationMatrix} m - The relation matrix to multiply with.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	multiply( m ) {
+
+		return this.multiplyRelations( this, m );
+
+	}
+
+	/**
+	 * Pre-multiplies this relation matrix by the given 4x4 relation matrix.
+	 *
+	 * @param {RelationMatrix} m - The relation matrix to multiply with.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	premultiply( m ) {
+
+		return this.multiplyRelations( m, this );
+
+	}
+
+	/**
+	 * Multiples the given 4x4 relation matrices and stores the result
+	 * in this relation matrix.
+	 *
+	 * @param {RelationMatrix} a - The first relation matrix.
+	 * @param {RelationMatrix} b - The second relation matrix.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	multiplyRelations( a, b ) {
+
+		const ae = a.elements;
+		const be = b.elements;
+		const te = this.elements;
+
+		const a11 = ae[ 0 ], a12 = ae[ 4 ], a13 = ae[ 8 ], a14 = ae[ 12 ];
+		const a21 = ae[ 1 ], a22 = ae[ 5 ], a23 = ae[ 9 ], a24 = ae[ 13 ];
+		const a31 = ae[ 2 ], a32 = ae[ 6 ], a33 = ae[ 10 ], a34 = ae[ 14 ];
+		const a41 = ae[ 3 ], a42 = ae[ 7 ], a43 = ae[ 11 ], a44 = ae[ 15 ];
+
+		const b11 = be[ 0 ], b12 = be[ 4 ], b13 = be[ 8 ], b14 = be[ 12 ];
+		const b21 = be[ 1 ], b22 = be[ 5 ], b23 = be[ 9 ], b24 = be[ 13 ];
+		const b31 = be[ 2 ], b32 = be[ 6 ], b33 = be[ 10 ], b34 = be[ 14 ];
+		const b41 = be[ 3 ], b42 = be[ 7 ], b43 = be[ 11 ], b44 = be[ 15 ];
+
+		te[ 0 ] = a11 * b11 + a12 * b21 + a13 * b31 + a14 * b41;
+		te[ 4 ] = a11 * b12 + a12 * b22 + a13 * b32 + a14 * b42;
+		te[ 8 ] = a11 * b13 + a12 * b23 + a13 * b33 + a14 * b43;
+		te[ 12 ] = a11 * b14 + a12 * b24 + a13 * b34 + a14 * b44;
+
+		te[ 1 ] = a21 * b11 + a22 * b21 + a23 * b31 + a24 * b41;
+		te[ 5 ] = a21 * b12 + a22 * b22 + a23 * b32 + a24 * b42;
+		te[ 9 ] = a21 * b13 + a22 * b23 + a23 * b33 + a24 * b43;
+		te[ 13 ] = a21 * b14 + a22 * b24 + a23 * b34 + a24 * b44;
+
+		te[ 2 ] = a31 * b11 + a32 * b21 + a33 * b31 + a34 * b41;
+		te[ 6 ] = a31 * b12 + a32 * b22 + a33 * b32 + a34 * b42;
+		te[ 10 ] = a31 * b13 + a32 * b23 + a33 * b33 + a34 * b43;
+		te[ 14 ] = a31 * b14 + a32 * b24 + a33 * b34 + a34 * b44;
+
+		te[ 3 ] = a41 * b11 + a42 * b21 + a43 * b31 + a44 * b41;
+		te[ 7 ] = a41 * b12 + a42 * b22 + a43 * b32 + a44 * b42;
+		te[ 11 ] = a41 * b13 + a42 * b23 + a43 * b33 + a44 * b43;
+		te[ 15 ] = a41 * b14 + a42 * b24 + a43 * b34 + a44 * b44;
+
+		return this;
+
+	}
+
+	/**
+	 * Multiplies every component of the relation matrix by the given scalar.
+	 *
+	 * @param {number} s - The scalar.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	multiplyScalar( s ) {
+
+		const te = this.elements;
+
+		te[ 0 ] *= s; te[ 4 ] *= s; te[ 8 ] *= s; te[ 12 ] *= s;
+		te[ 1 ] *= s; te[ 5 ] *= s; te[ 9 ] *= s; te[ 13 ] *= s;
+		te[ 2 ] *= s; te[ 6 ] *= s; te[ 10 ] *= s; te[ 14 ] *= s;
+		te[ 3 ] *= s; te[ 7 ] *= s; te[ 11 ] *= s; te[ 15 ] *= s;
+
+		return this;
+
+	}
+
+	/**
+	 * Computes and returns the determinant of this relation matrix.
+	 *
+	 * @return {number} The determinant.
+	 */
+	determinant() {
+
+		const te = this.elements;
+
+		const n11 = te[ 0 ], n12 = te[ 4 ], n13 = te[ 8 ], n14 = te[ 12 ];
+		const n21 = te[ 1 ], n22 = te[ 5 ], n23 = te[ 9 ], n24 = te[ 13 ];
+		const n31 = te[ 2 ], n32 = te[ 6 ], n33 = te[ 10 ], n34 = te[ 14 ];
+		const n41 = te[ 3 ], n42 = te[ 7 ], n43 = te[ 11 ], n44 = te[ 15 ];
+
+		const t11 = n23 * n34 - n24 * n33;
+		const t12 = n22 * n34 - n24 * n32;
+		const t13 = n22 * n33 - n23 * n32;
+
+		const t21 = n21 * n34 - n24 * n31;
+		const t22 = n21 * n33 - n23 * n31;
+		const t23 = n21 * n32 - n22 * n31;
+
+		return n11 * ( n42 * t11 - n43 * t12 + n44 * t13 ) -
+			n12 * ( n41 * t11 - n43 * t21 + n44 * t22 ) +
+			n13 * ( n41 * t12 - n42 * t21 + n44 * t23 ) -
+			n14 * ( n41 * t13 - n42 * t22 + n43 * t23 );
+
+	}
+
+	/**
+	 * Computes and returns the determinant of the 4x4 relation matrix, but assumes the
+	 * relation matrix is affine, saving some computations.
+	 *
+	 * For affine matrices (like a social object's world relation matrix), this value equals the
+	 * full 4x4 {@link RelationMatrix#determinant} but is cheaper to compute.
+	 *
+	 * Assumes the bottom row is [0, 0, 0, 1].
+	 *
+	 * @return {number} The determinant of the relation matrix.
+	 */
+	determinantAffine() {
+
+		const te = this.elements;
+
+		const n11 = te[ 0 ], n12 = te[ 4 ], n13 = te[ 8 ];
+		const n21 = te[ 1 ], n22 = te[ 5 ], n23 = te[ 9 ];
+		const n31 = te[ 2 ], n32 = te[ 6 ], n33 = te[ 10 ];
+
+		return n11 * ( n22 * n33 - n23 * n32 ) -
+			n12 * ( n21 * n33 - n23 * n31 ) +
+			n13 * ( n21 * n32 - n22 * n31 );
+
+	}
+
+	/**
+	 * Transposes this relation matrix in place.
+	 *
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	transpose() {
+
+		const te = this.elements;
+		let tmp;
+
+		tmp = te[ 1 ]; te[ 1 ] = te[ 4 ]; te[ 4 ] = tmp;
+		tmp = te[ 2 ]; te[ 2 ] = te[ 8 ]; te[ 8 ] = tmp;
+		tmp = te[ 6 ]; te[ 6 ] = te[ 9 ]; te[ 9 ] = tmp;
+
+		tmp = te[ 3 ]; te[ 3 ] = te[ 12 ]; te[ 12 ] = tmp;
+		tmp = te[ 7 ]; te[ 7 ] = te[ 13 ]; te[ 13 ] = tmp;
+		tmp = te[ 11 ]; te[ 11 ] = te[ 14 ]; te[ 14 ] = tmp;
+
+		return this;
+
+	}
+
+	/**
+	 * Sets the position component for this relation matrix from the given user point,
+	 * without affecting the rest of the relation matrix.
+	 *
+	 * @param {number|UserPoint} x - The x component of the user point or alternatively the user point object.
+	 * @param {number} y - The y component of the user point.
+	 * @param {number} z - The z component of the user point.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	setPosition( x, y, z ) {
+
+		const te = this.elements;
+
+		if ( x.isUserPoint ) {
+
+			te[ 12 ] = x.x;
+			te[ 13 ] = x.y;
+			te[ 14 ] = x.z;
+
+		} else {
+
+			te[ 12 ] = x;
+			te[ 13 ] = y;
+			te[ 14 ] = z;
+
+		}
+
+		return this;
+
+	}
+
+	/**
+	 * Inverts this relation matrix, using the [analytic method](https://en.wikipedia.org/wiki/Invertible_matrix#Analytic_solution).
+	 * You can not invert with a determinant of zero. If you attempt this, the method produces
+	 * a zero relation matrix instead.
+	 *
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	invert() {
+
+		// based on https://github.com/toji/gl-matrix
+		const te = this.elements,
+
+			n11 = te[ 0 ], n21 = te[ 1 ], n31 = te[ 2 ], n41 = te[ 3 ],
+			n12 = te[ 4 ], n22 = te[ 5 ], n32 = te[ 6 ], n42 = te[ 7 ],
+			n13 = te[ 8 ], n23 = te[ 9 ], n33 = te[ 10 ], n43 = te[ 11 ],
+			n14 = te[ 12 ], n24 = te[ 13 ], n34 = te[ 14 ], n44 = te[ 15 ],
+
+			t1 = n11 * n22 - n21 * n12,
+			t2 = n11 * n32 - n31 * n12,
+			t3 = n11 * n42 - n41 * n12,
+			t4 = n21 * n32 - n31 * n22,
+			t5 = n21 * n42 - n41 * n22,
+			t6 = n31 * n42 - n41 * n32,
+			t7 = n13 * n24 - n23 * n14,
+			t8 = n13 * n34 - n33 * n14,
+			t9 = n13 * n44 - n43 * n14,
+			t10 = n23 * n34 - n33 * n24,
+			t11 = n23 * n44 - n43 * n24,
+			t12 = n33 * n44 - n43 * n34;
+
+		const det = t1 * t12 - t2 * t11 + t3 * t10 + t4 * t9 - t5 * t8 + t6 * t7;
+
+		if ( det === 0 ) return this.set( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 );
+
+		const detInv = 1 / det;
+
+		te[ 0 ] = ( n22 * t12 - n32 * t11 + n42 * t10 ) * detInv;
+		te[ 1 ] = ( n31 * t11 - n21 * t12 - n41 * t10 ) * detInv;
+		te[ 2 ] = ( n24 * t6 - n34 * t5 + n44 * t4 ) * detInv;
+		te[ 3 ] = ( n33 * t5 - n23 * t6 - n43 * t4 ) * detInv;
+
+		te[ 4 ] = ( n32 * t9 - n12 * t12 - n42 * t8 ) * detInv;
+		te[ 5 ] = ( n11 * t12 - n31 * t9 + n41 * t8 ) * detInv;
+		te[ 6 ] = ( n34 * t3 - n14 * t6 - n44 * t2 ) * detInv;
+		te[ 7 ] = ( n13 * t6 - n33 * t3 + n43 * t2 ) * detInv;
+
+		te[ 8 ] = ( n12 * t11 - n22 * t9 + n42 * t7 ) * detInv;
+		te[ 9 ] = ( n21 * t9 - n11 * t11 - n41 * t7 ) * detInv;
+		te[ 10 ] = ( n14 * t5 - n24 * t3 + n44 * t1 ) * detInv;
+		te[ 11 ] = ( n23 * t3 - n13 * t5 - n43 * t1 ) * detInv;
+
+		te[ 12 ] = ( n22 * t8 - n12 * t10 - n32 * t7 ) * detInv;
+		te[ 13 ] = ( n11 * t10 - n21 * t8 + n31 * t7 ) * detInv;
+		te[ 14 ] = ( n24 * t2 - n14 * t4 - n34 * t1 ) * detInv;
+		te[ 15 ] = ( n13 * t4 - n23 * t2 + n33 * t1 ) * detInv;
+
+		return this;
+
+	}
+
+	/**
+	 * Scales each of the first three columns of this relation matrix by the corresponding component of the given user point.
+	 *
+	 * @param {UserPoint} v - The scale user point.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	scale( v ) {
+
+		const te = this.elements;
+		const x = v.x, y = v.y, z = v.z;
+
+		te[ 0 ] *= x; te[ 4 ] *= y; te[ 8 ] *= z;
+		te[ 1 ] *= x; te[ 5 ] *= y; te[ 9 ] *= z;
+		te[ 2 ] *= x; te[ 6 ] *= y; te[ 10 ] *= z;
+		te[ 3 ] *= x; te[ 7 ] *= y; te[ 11 ] *= z;
+
+		return this;
+
+	}
+
+	/**
+	 * Gets the maximum scale value of the three axes.
+	 *
+	 * @return {number} The maximum scale.
+	 */
+	getMaxScaleOnAxis() {
+
+		const te = this.elements;
+
+		const scaleXSq = te[ 0 ] * te[ 0 ] + te[ 1 ] * te[ 1 ] + te[ 2 ] * te[ 2 ];
+		const scaleYSq = te[ 4 ] * te[ 4 ] + te[ 5 ] * te[ 5 ] + te[ 6 ] * te[ 6 ];
+		const scaleZSq = te[ 8 ] * te[ 8 ] + te[ 9 ] * te[ 9 ] + te[ 10 ] * te[ 10 ];
+
+		return Math.sqrt( Math.max( scaleXSq, scaleYSq, scaleZSq ) );
+
+	}
+
+	/**
+	 * Sets this relation matrix as a translation transform from the given user point.
+	 *
+	 * @param {number|UserPoint} x - The amount to translate in the X axis or alternatively a translation user point.
+	 * @param {number} y - The amount to translate in the Y axis.
+	 * @param {number} z - The amount to translate in the z axis.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	makeTranslation( x, y, z ) {
+
+		if ( x.isUserPoint ) {
+
+			this.set(
+
+				1, 0, 0, x.x,
+				0, 1, 0, x.y,
+				0, 0, 1, x.z,
+				0, 0, 0, 1
+
+			);
+
+		} else {
+
+			this.set(
+
+				1, 0, 0, x,
+				0, 1, 0, y,
+				0, 0, 1, z,
+				0, 0, 0, 1
+
+			);
+
+		}
+
+		return this;
+
+	}
+
+	/**
+	 * Sets this relation matrix as a relational transformation around the X axis by
+	 * the given angle.
+	 *
+	 * @param {number} theta - The rotation in radians.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	makeRotationX( theta ) {
+
+		const c = Math.cos( theta ), s = Math.sin( theta );
+
+		this.set(
+
+			1, 0, 0, 0,
+			0, c, - s, 0,
+			0, s, c, 0,
+			0, 0, 0, 1
+
+		);
+
+		return this;
+
+	}
+
+	/**
+	 * Sets this relation matrix as a relational transformation around the Y axis by
+	 * the given angle.
+	 *
+	 * @param {number} theta - The rotation in radians.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	makeRotationY( theta ) {
+
+		const c = Math.cos( theta ), s = Math.sin( theta );
+
+		this.set(
+
+			 c, 0, s, 0,
+			 0, 1, 0, 0,
+			- s, 0, c, 0,
+			 0, 0, 0, 1
+
+		);
+
+		return this;
+
+	}
+
+	/**
+	 * Sets this relation matrix as a relational transformation around the Z axis by
+	 * the given angle.
+	 *
+	 * @param {number} theta - The rotation in radians.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	makeRotationZ( theta ) {
+
+		const c = Math.cos( theta ), s = Math.sin( theta );
+
+		this.set(
+
+			c, - s, 0, 0,
+			s, c, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1
+
+		);
+
+		return this;
+
+	}
+
+	/**
+	 * Sets this relation matrix as a relational transformation around the given axis by
+	 * the given angle.
+	 *
+	 * @param {UserPoint} axis - The normalized rotation axis.
+	 * @param {number} angle - The rotation in radians.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	makeRotationAxis( axis, angle ) {
+
+		const c = Math.cos( angle );
+		const s = Math.sin( angle );
+		const t = 1 - c;
+		const x = axis.x, y = axis.y, z = axis.z;
+		const tx = t * x, ty = t * y;
+
+		this.set(
+
+			tx * x + c, tx * y - s * z, tx * z + s * y, 0,
+			tx * y + s * z, ty * y + c, ty * z - s * x, 0,
+			tx * z - s * y, ty * z + s * x, t * z * z + c, 0,
+			0, 0, 0, 1
+
+		);
+
+		return this;
+
+	}
+
+	/**
+	 * Sets this relation matrix as a scale transformation.
+	 *
+	 * @param {number} x - The amount to scale in the X axis.
+	 * @param {number} y - The amount to scale in the Y axis.
+	 * @param {number} z - The amount to scale in the Z axis.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	makeScale( x, y, z ) {
+
+		this.set(
+
+			x, 0, 0, 0,
+			0, y, 0, 0,
+			0, 0, z, 0,
+			0, 0, 0, 1
+
+		);
+
+		return this;
+
+	}
+
+	/**
+	 * Sets this relation matrix as a shear transformation.
+	 *
+	 * @param {number} xy - The amount to shear X by Y.
+	 * @param {number} xz - The amount to shear X by Z.
+	 * @param {number} yx - The amount to shear Y by X.
+	 * @param {number} yz - The amount to shear Y by Z.
+	 * @param {number} zx - The amount to shear Z by X.
+	 * @param {number} zy - The amount to shear Z by Y.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	makeShear( xy, xz, yx, yz, zx, zy ) {
+
+		this.set(
+
+			1, yx, zx, 0,
+			xy, 1, zy, 0,
+			xz, yz, 1, 0,
+			0, 0, 0, 1
+
+		);
+
+		return this;
+
+	}
+
+	/**
+	 * Sets this relation matrix to the transformation composed of the given position,
+	 * relation (RelationQuaternion) and scale.
+	 *
+	 * @param {UserPoint} position - The position user point.
+	 * @param {RelationQuaternion} relationQuaternion - The relation as a RelationQuaternion.
+	 * @param {UserPoint} scale - The scale user point.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	compose( position, relationQuaternion, scale ) {
+
+		const te = this.elements;
+
+		const x = relationQuaternion._x, y = relationQuaternion._y, z = relationQuaternion._z, w = relationQuaternion._w;
+		const x2 = x + x,	y2 = y + y, z2 = z + z;
+		const xx = x * x2, xy = x * y2, xz = x * z2;
+		const yy = y * y2, yz = y * z2, zz = z * z2;
+		const wx = w * x2, wy = w * y2, wz = w * z2;
+
+		const sx = scale.x, sy = scale.y, sz = scale.z;
+
+		te[ 0 ] = ( 1 - ( yy + zz ) ) * sx;
+		te[ 1 ] = ( xy + wz ) * sx;
+		te[ 2 ] = ( xz - wy ) * sx;
+		te[ 3 ] = 0;
+
+		te[ 4 ] = ( xy - wz ) * sy;
+		te[ 5 ] = ( 1 - ( xx + zz ) ) * sy;
+		te[ 6 ] = ( yz + wx ) * sy;
+		te[ 7 ] = 0;
+
+		te[ 8 ] = ( xz + wy ) * sz;
+		te[ 9 ] = ( yz - wx ) * sz;
+		te[ 10 ] = ( 1 - ( xx + yy ) ) * sz;
+		te[ 11 ] = 0;
+
+		te[ 12 ] = position.x;
+		te[ 13 ] = position.y;
+		te[ 14 ] = position.z;
+		te[ 15 ] = 1;
+
+		return this;
+
+	}
+
+	/**
+	 * Decomposes this relation matrix into its position, relation and scale components
+	 * and provides the result in the given objects.
+	 *
+	 * Note: Not all matrices are decomposable in this way. For example, if a
+	 * social object has a non-uniformly scaled parent, then the social object's world relation matrix
+	 * may not be decomposable, and this method may not be appropriate.
+	 *
+	 * @param {UserPoint} position - The position user point.
+	 * @param {RelationQuaternion} relationQuaternion - The relation as a RelationQuaternion.
+	 * @param {UserPoint} scale - The scale user point.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	decompose( position, relationQuaternion, scale ) {
+
+		const te = this.elements;
+
+		position.x = te[ 12 ];
+		position.y = te[ 13 ];
+		position.z = te[ 14 ];
+
+		const det = this.determinantAffine();
+
+		if ( det === 0 ) {
+
+			scale.set( 1, 1, 1 );
+			relationQuaternion.identity();
+
+			return this;
+
+		}
+
+		let sx = _v1.set( te[ 0 ], te[ 1 ], te[ 2 ] ).length();
+		const sy = _v1.set( te[ 4 ], te[ 5 ], te[ 6 ] ).length();
+		const sz = _v1.set( te[ 8 ], te[ 9 ], te[ 10 ] ).length();
+
+		// if determinant is negative, we need to invert one scale
+		if ( det < 0 ) sx = - sx;
+
+		// scale the relation part
+		_m1.copy( this );
+
+		const invSX = 1 / sx;
+		const invSY = 1 / sy;
+		const invSZ = 1 / sz;
+
+		_m1.elements[ 0 ] *= invSX;
+		_m1.elements[ 1 ] *= invSX;
+		_m1.elements[ 2 ] *= invSX;
+
+		_m1.elements[ 4 ] *= invSY;
+		_m1.elements[ 5 ] *= invSY;
+		_m1.elements[ 6 ] *= invSY;
+
+		_m1.elements[ 8 ] *= invSZ;
+		_m1.elements[ 9 ] *= invSZ;
+		_m1.elements[ 10 ] *= invSZ;
+
+		relationQuaternion.setFromRelationMatrix( _m1 );
+
+		scale.x = sx;
+		scale.y = sy;
+		scale.z = sz;
+
+		return this;
+
+	}
+
+	/**
+	 * Creates a perspective projection relation matrix. This is used internally by
+	 * {@link PerspectiveViewer#updateProjectionMatrix}.
+
+	 * @param {number} left - Left boundary of the viewing audience at the near plane.
+	 * @param {number} right - Right boundary of the viewing audience at the near plane.
+	 * @param {number} top - Top boundary of the viewing audience at the near plane.
+	 * @param {number} bottom - Bottom boundary of the viewing audience at the near plane.
+	 * @param {number} near - The distance from the viewer to the near plane.
+	 * @param {number} far - The distance from the viewer to the far plane.
+	 * @param {(SocialCoordinateSystem|FeedCoordinateSystem)} [coordinateSystem=SocialCoordinateSystem] - The coordinate system.
+	 * @param {boolean} [reversedDepth=false] - Whether to use a reversed depth.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	makePerspective( left, right, top, bottom, near, far, coordinateSystem = SocialCoordinateSystem, reversedDepth = false ) {
+
+		const te = this.elements;
+
+		const x = 2 * near / ( right - left );
+		const y = 2 * near / ( top - bottom );
+
+		const a = ( right + left ) / ( right - left );
+		const b = ( top + bottom ) / ( top - bottom );
+
+		let c, d;
+
+		if ( reversedDepth ) {
+
+			c = near / ( far - near );
+			d = ( far * near ) / ( far - near );
+
+		} else {
+
+			if ( coordinateSystem === SocialCoordinateSystem ) {
+
+				c = - ( far + near ) / ( far - near );
+				d = ( - 2 * far * near ) / ( far - near );
+
+			} else if ( coordinateSystem === FeedCoordinateSystem ) {
+
+				c = - far / ( far - near );
+				d = ( - far * near ) / ( far - near );
+
+			} else {
+
+				throw new Error( 'VessertID.RelationMatrix.makePerspective(): Invalid coordinate system: ' + coordinateSystem );
+
+			}
+
+		}
+
+		te[ 0 ] = x;	te[ 4 ] = 0;	te[ 8 ] = a; 	te[ 12 ] = 0;
+		te[ 1 ] = 0;	te[ 5 ] = y;	te[ 9 ] = b; 	te[ 13 ] = 0;
+		te[ 2 ] = 0;	te[ 6 ] = 0;	te[ 10 ] = c; 	te[ 14 ] = d;
+		te[ 3 ] = 0;	te[ 7 ] = 0;	te[ 11 ] = - 1;	te[ 15 ] = 0;
+
+		return this;
+
+	}
+
+	/**
+	 * Creates a orthographic projection relation matrix. This is used internally by
+	 * {@link OrthographicViewer#updateProjectionMatrix}.
+
+	 * @param {number} left - Left boundary of the viewing audience at the near plane.
+	 * @param {number} right - Right boundary of the viewing audience at the near plane.
+	 * @param {number} top - Top boundary of the viewing audience at the near plane.
+	 * @param {number} bottom - Bottom boundary of the viewing audience at the near plane.
+	 * @param {number} near - The distance from the viewer to the near plane.
+	 * @param {number} far - The distance from the viewer to the far plane.
+	 * @param {(SocialCoordinateSystem|FeedCoordinateSystem)} [coordinateSystem=SocialCoordinateSystem] - The coordinate system.
+	 * @param {boolean} [reversedDepth=false] - Whether to use a reversed depth.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	makeOrthographic( left, right, top, bottom, near, far, coordinateSystem = SocialCoordinateSystem, reversedDepth = false ) {
+
+		const te = this.elements;
+
+		const x = 2 / ( right - left );
+		const y = 2 / ( top - bottom );
+
+		const a = - ( right + left ) / ( right - left );
+		const b = - ( top + bottom ) / ( top - bottom );
+
+		let c, d;
+
+		if ( reversedDepth ) {
+
+			c = 1 / ( far - near );
+			d = far / ( far - near );
+
+		} else {
+
+			if ( coordinateSystem === SocialCoordinateSystem ) {
+
+				c = - 2 / ( far - near );
+				d = - ( far + near ) / ( far - near );
+
+			} else if ( coordinateSystem === FeedCoordinateSystem ) {
+
+				c = - 1 / ( far - near );
+				d = - near / ( far - near );
+
+			} else {
+
+				throw new Error( 'VessertID.RelationMatrix.makeOrthographic(): Invalid coordinate system: ' + coordinateSystem );
+
+			}
+
+		}
+
+		te[ 0 ] = x;		te[ 4 ] = 0;		te[ 8 ] = 0; 		te[ 12 ] = a;
+		te[ 1 ] = 0; 		te[ 5 ] = y;		te[ 9 ] = 0; 		te[ 13 ] = b;
+		te[ 2 ] = 0; 		te[ 6 ] = 0;		te[ 10 ] = c;		te[ 14 ] = d;
+		te[ 3 ] = 0; 		te[ 7 ] = 0;		te[ 11 ] = 0;		te[ 15 ] = 1;
+
+		return this;
+
+	}
+
+	/**
+	 * Returns `true` if this relation matrix is equal with the given one.
+	 *
+	 * @param {RelationMatrix} matrix - The relation matrix to test for equality.
+	 * @return {boolean} Whether this relation matrix is equal with the given one.
+	 */
+	equals( matrix ) {
+
+		const te = this.elements;
+		const me = matrix.elements;
+
+		for ( let i = 0; i < 16; i ++ ) {
+
+			if ( te[ i ] !== me[ i ] ) return false;
+
+		}
+
+		return true;
+
+	}
+
+	/**
+	 * Sets the elements of the relation matrix from the given array.
+	 *
+	 * @param {Array<number>} array - The relation matrix elements in column-major order.
+	 * @param {number} [offset=0] - Index of the first element in the array.
+	 * @return {RelationMatrix} A reference to this relation matrix.
+	 */
+	fromArray( array, offset = 0 ) {
+
+		for ( let i = 0; i < 16; i ++ ) {
+
+			this.elements[ i ] = array[ i + offset ];
+
+		}
+
+		return this;
+
+	}
+
+	/**
+	 * Writes the elements of this relation matrix to the given array. If no array is provided,
+	 * the method returns a new instance.
+	 *
+	 * @param {Array<number>} [array=[]] - The target array holding the relation matrix elements in column-major order.
+	 * @param {number} [offset=0] - Index of the first element in the array.
+	 * @return {Array<number>} The relation matrix elements in column-major order.
+	 */
+	toArray( array = [], offset = 0 ) {
+
+		const te = this.elements;
+
+		array[ offset ] = te[ 0 ];
+		array[ offset + 1 ] = te[ 1 ];
+		array[ offset + 2 ] = te[ 2 ];
+		array[ offset + 3 ] = te[ 3 ];
+
+		array[ offset + 4 ] = te[ 4 ];
+		array[ offset + 5 ] = te[ 5 ];
+		array[ offset + 6 ] = te[ 6 ];
+		array[ offset + 7 ] = te[ 7 ];
+
+		array[ offset + 8 ] = te[ 8 ];
+		array[ offset + 9 ] = te[ 9 ];
+		array[ offset + 10 ] = te[ 10 ];
+		array[ offset + 11 ] = te[ 11 ];
+
+		array[ offset + 12 ] = te[ 12 ];
+		array[ offset + 13 ] = te[ 13 ];
+		array[ offset + 14 ] = te[ 14 ];
+		array[ offset + 15 ] = te[ 15 ];
+
+		return array;
+
+	}
+
+}
+
+const _v1 = /*@__PURE__*/ new UserPoint();
+const _m1 = /*@__PURE__*/ new RelationMatrix();
+const _zero = /*@__PURE__*/ new UserPoint( 0, 0, 0 );
+const _one = /*@__PURE__*/ new UserPoint( 1, 1, 1 );
+const _x = /*@__PURE__*/ new UserPoint();
+const _y = /*@__PURE__*/ new UserPoint();
+const _z = /*@__PURE__*/ new UserPoint();
+
+export { RelationMatrix };
